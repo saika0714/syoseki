@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>書籍管理アプリ</title>
+    <script>
+        async function showStudents(bookId, isBorrowed) {
+            const response = await fetch(`/students/${bookId}`);
+            const students = await response.json();
+            
+            const container = document.getElementById(`students-${bookId}`);
+            container.innerHTML = '';
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = isBorrowed ? '/return' : '/borrow';
+
+            const select = document.createElement('select');
+            select.name = 'student_id';
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.student_id;
+                option.text = student.student_id;
+                select.appendChild(option);
+            });
+
+            const hiddenBookId = document.createElement('input');
+            hiddenBookId.type = 'hidden';
+            hiddenBookId.name = 'book_id';
+            hiddenBookId.value = bookId;
+
+            const button = document.createElement('button');
+            button.type = 'submit';
+            button.innerText = isBorrowed ? '返却' : '借りる';
+
+            if (!isBorrowed) form.appendChild(select);
+            form.appendChild(hiddenBookId);
+            form.appendChild(button);
+            container.appendChild(form);
+        }
+    </script>
+</head>
+<body>
+<h2>書籍を追加</h2>
+<form action="/add_book" method="post">
+    <input type="text" name="title" placeholder="書籍タイトル" required>
+    <input type="text" name="author" placeholder="著者名">
+    <button type="submit">追加</button>
+</form>
+
+<hr>
+
+    <h1>書籍一覧</h1>
+    <table border="1">
+        <tr>
+            <th>タイトル</th>
+            <th>状態</th>
+            <th>操作</th>
+        </tr>
+        {% for book in books %}
+        <tr>
+            <td>{{ book.title }}</td>
+            <td>{{ '貸出中' if book.is_borrowed else '在庫あり' }}</td>
+            <td>
+                <button onclick="showStudents({{ book.id }}, {{ 'true' if book.is_borrowed else 'false' }})">
+                    {{ '返却' if book.is_borrowed else '借りる' }}
+                </button>
+                <div id="students-{{ book.id }}"></div>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+
